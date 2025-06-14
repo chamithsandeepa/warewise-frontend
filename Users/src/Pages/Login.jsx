@@ -1,3 +1,4 @@
+// src/pages/Login.jsx
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -6,14 +7,12 @@ const Login = () => {
   const [currentState, setCurrentState] = useState("Sign Up");
   const navigate = useNavigate();
 
-  // Store form input values
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   });
 
-  // Handle input changes
   const handleChange = (e) => {
     setFormData((prev) => ({
       ...prev,
@@ -21,8 +20,6 @@ const Login = () => {
     }));
   };
 
-  // Handle form submission
-  // not reloading the page on form submission
   const onSubmitHandler = async (event) => {
     event.preventDefault();
 
@@ -36,12 +33,11 @@ const Login = () => {
             password: formData.password,
           }
         );
-        console.log("User registered:", response.data);
         alert("Registration successful!");
         setCurrentState("Login");
       } catch (error) {
-        console.error("Registration failed:", error);
-        alert("Registration failed. Check the console for details.");
+        alert("Registration failed. Check the console.");
+        console.error(error);
       }
     } else if (currentState === "Login") {
       try {
@@ -52,24 +48,26 @@ const Login = () => {
             password: formData.password,
           }
         );
-        console.log("Login successful:", response.data);
-        alert("Login successful!");
-        navigate("/"); // Redirect to homepage or dashboard
 
-        // You can optionally store the user data in localStorage
-        // localStorage.setItem("user", JSON.stringify(response.data));
-        // Navigate to dashboard or homepage if needed
+        const user = response.data;
+
+        if (user.role === "user") {
+          localStorage.setItem("user", JSON.stringify(user));
+          alert("Login successful!");
+          navigate("/"); // user homepage
+        } else {
+          alert("You are not authorized to access the user panel.");
+        }
       } catch (error) {
-        console.error("Login failed:", error);
-        if (error.response && error.response.status === 401) {
+        if (error.response?.status === 401) {
           alert("Invalid email or password.");
         } else {
-          alert("Login failed. Check the console for details.");
+          alert("Login failed. Check the console.");
         }
+        console.error(error);
       }
     }
   };
-  
 
   return (
     <form
@@ -80,9 +78,8 @@ const Login = () => {
         <p className="prata-regular text-3xl">{currentState}</p>
         <hr className="border-none h-[1.5px] w-8 bg-gray-800" />
       </div>
-      {currentState === "Login" ? (
-        ""
-      ) : (
+
+      {currentState === "Sign Up" && (
         <input
           type="text"
           name="name"
@@ -93,6 +90,7 @@ const Login = () => {
           required
         />
       )}
+
       <input
         type="email"
         name="email"
@@ -111,24 +109,19 @@ const Login = () => {
         placeholder="Password"
         required
       />
+
       <div className="w-full flex justify-between text-sm mt-[-8px]">
         <p className="cursor-pointer">Forgot your password?</p>
-        {currentState === "Login" ? (
-          <p
-            onClick={() => setCurrentState("Sign Up")}
-            className="cursor-pointer"
-          >
-            Create account
-          </p>
-        ) : (
-          <p
-            onClick={() => setCurrentState("Login")}
-            className="cursor-pointer"
-          >
-            Login here
-          </p>
-        )}
+        <p
+          onClick={() =>
+            setCurrentState(currentState === "Login" ? "Sign Up" : "Login")
+          }
+          className="cursor-pointer"
+        >
+          {currentState === "Login" ? "Create account" : "Login here"}
+        </p>
       </div>
+
       <button className="bg-black text-white font-light px-8 py-2 mt-4">
         {currentState === "Login" ? "Sign In" : "Sign Up"}
       </button>
