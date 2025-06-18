@@ -7,7 +7,6 @@ import CartTotal from "../Components/CartTotal";
 const Cart = () => {
   const { products, cartItems, currency, updateQuantity, navigate } =
     useContext(ShopContext);
-
   const [cartData, setCartData] = useState([]);
 
   useEffect(() => {
@@ -16,7 +15,7 @@ const Cart = () => {
       for (const item in cartItems[items]) {
         if (cartItems[items][item] > 0) {
           tempData.push({
-            _id: items,
+            id: items,
             size: item,
             quantity: cartItems[items][item],
           });
@@ -24,7 +23,6 @@ const Cart = () => {
       }
     }
     setCartData(tempData);
-    // console.log(tempData);
   }, [cartItems]);
 
   return (
@@ -35,18 +33,21 @@ const Cart = () => {
       <div>
         {cartData.map((item, index) => {
           const productData = products.find(
-            (product) => product._id === item._id
+            (product) => product.id === item.id
           );
+
+          if (!productData) return null; // Safe check
+
           return (
             <div
               key={index}
-              className="py-4 border-t border-b text-gray-700 grid grid-cols-[4fr_0.5fr_0.5fr] sm:grid-cols-[4fr_2fr_0.5fr] items-center gap-4 "
+              className="py-4 border-t border-b text-gray-700 grid grid-cols-[4fr_0.5fr_0.5fr] sm:grid-cols-[4fr_2fr_0.5fr] items-center gap-4"
             >
               <div className="flex items-start gap-6">
                 <img
                   className="w-16 sm:w-20"
-                  src={productData.image[0]}
-                  alt=""
+                  src={productData.imageUrls?.[0] || assets.placeholder_image}
+                  alt={productData.name}
                 />
                 <div>
                   <p className="text-xs sm:text-lg font-medium">
@@ -67,11 +68,7 @@ const Cart = () => {
                 onChange={(e) =>
                   e.target.value === "" || e.target.value === "0"
                     ? null
-                    : updateQuantity(
-                        item._id,
-                        item.size,
-                        Number(e.target.value)
-                      )
+                    : updateQuantity(item.id, item.size, Number(e.target.value))
                 }
                 className="border max-w-10 sm:max-20 px-1 sm:px-2 py-1"
                 type="number"
@@ -79,10 +76,10 @@ const Cart = () => {
                 defaultValue={item.quantity}
               />
               <img
-                onClick={() => updateQuantity(item._id, item.size, 0)}
+                onClick={() => updateQuantity(item.id, item.size, 0)}
                 className="w-4 mr-4 sm:w-5 cursor-pointer"
                 src={assets.bin_icon}
-                alt=""
+                alt="Remove item"
               />
             </div>
           );
