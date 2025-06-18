@@ -16,10 +16,9 @@ const RelatedProducts = ({ category, subCategory }) => {
         (item) => subCategory === item.subCategory
       );
 
-      // console.log(productsCopy.slice(0, 5));
       setRelated(productsCopy.slice(0, 5));
     }
-  }, [products]);
+  }, [products, category, subCategory]);
 
   return (
     <div className="my-24">
@@ -30,10 +29,10 @@ const RelatedProducts = ({ category, subCategory }) => {
         {related.map((item, index) => (
           <ProductItem
             key={index}
-            id={item._id}
+            id={item.id} // ✅ Use 'id' instead of '_id' if you're standardizing
             name={item.name}
             price={item.price}
-            image={item.image}
+            image={item.imageUrls} // ✅ Pass correct image field
           />
         ))}
       </div>

@@ -6,34 +6,29 @@ import RelatedProducts from "../Components/RelatedProducts";
 
 const Product = () => {
   const { productId } = useParams();
-  // console.log(productId);
   const { products, currency, addToCart } = useContext(ShopContext);
-  const [productData, setProductData] = useState(false);
+  const [productData, setProductData] = useState(null);
   const [image, setImage] = useState("");
   const [size, setSize] = useState("");
 
-  const fetchProductData = async () => {
-    products.find((item) => {
-      if (item._id === productId) {
-        setProductData(item);
-        // console.log(item);
-        setImage(item.image[0]);
-        return null;
+  const fetchProductData = () => {
+    const foundProduct = products.find((item) => item.id === productId); // Changed from item._id to item.id
+    if (foundProduct) {
+      setProductData(foundProduct);
+      // Set first image from imageUrls array with safety check
+      if (foundProduct.imageUrls && foundProduct.imageUrls.length > 0) {
+        setImage(foundProduct.imageUrls[0]);
       }
-    });
+    } else {
+      setProductData(null);
+      setImage("");
+    }
   };
 
-  // const fetchProductData = () => {
-  //   const foundProduct = products.find((item) => item._id === productId);
-  //   if (foundProduct) {
-  //     setProductData(foundProduct);
-  //     console.log(foundProduct);
-  //     setImage(foundProduct.image[0]);
-  //   }
-  // };
-
   useEffect(() => {
-    fetchProductData();
+    if (products && products.length > 0) {
+      fetchProductData();
+    }
   }, [productId, products]);
 
   return productData ? (
@@ -43,20 +38,36 @@ const Product = () => {
         {/* Product Images */}
         <div className="flex-1 flex flex-col-reverse gap-3 sm:flex-row">
           <div className="flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-between sm:justify-normal sm:w-[18.7%] w-full">
-            {productData.image.map((item, index) => (
-              <img
-                key={index}
-                onClick={() => setImage(item)}
-                className={`w-[24%] sm:w-full sm:mb-3 flex-shrink-0 cursor-pointer ${
-                  image === item ? "border-2 border-orange-500" : ""
-                }`}
-                src={item}
-                alt=""
-              />
-            ))}
+            {productData.imageUrls && productData.imageUrls.length > 0 ? (
+              productData.imageUrls.map((item, index) => (
+                <img
+                  key={index}
+                  onClick={() => setImage(item)}
+                  className={`w-[24%] sm:w-full sm:mb-3 flex-shrink-0 cursor-pointer ${
+                    image === item ? "border-2 border-orange-500" : ""
+                  }`}
+                  src={item}
+                  alt={`${productData.name} view ${index + 1}`}
+                />
+              ))
+            ) : (
+              <div className="w-[24%] sm:w-full sm:mb-3 flex-shrink-0 bg-gray-200 flex items-center justify-center h-20">
+                <span className="text-gray-400 text-xs">No Images</span>
+              </div>
+            )}
           </div>
           <div className="w-full sm:w-[80%]">
-            <img className="w-full h-auto" src={image} alt="" />
+            {image ? (
+              <img
+                className="w-full h-auto"
+                src={image}
+                alt={productData.name}
+              />
+            ) : (
+              <div className="w-full h-96 bg-gray-200 flex items-center justify-center">
+                <span className="text-gray-400">No Image Available</span>
+              </div>
+            )}
           </div>
         </div>
         {/* Product Info */}
@@ -80,22 +91,29 @@ const Product = () => {
           <div className="flex flex-col gap-4 my-8">
             <p>Select Size</p>
             <div className="flex gap-2">
-              {productData.sizes.map((item, index) => (
-                <button
-                  onClick={() => setSize(item)}
-                  className={`border py-2 px-4 bg-gray-100 ${
-                    item === size ? "border-orange-500" : " "
-                  }`}
-                  key={index}
-                >
-                  {item}
-                </button>
-              ))}
+              {productData.sizes && productData.sizes.length > 0 ? (
+                productData.sizes.map((item, index) => (
+                  <button
+                    onClick={() => setSize(item)}
+                    className={`border py-2 px-4 bg-gray-100 ${
+                      item === size ? "border-orange-500" : ""
+                    }`}
+                    key={index}
+                  >
+                    {item}
+                  </button>
+                ))
+              ) : (
+                <p className="text-gray-500">No sizes available</p>
+              )}
             </div>
           </div>
           <button
-            onClick={() => addToCart(productData._id, size)}
-            className="bg-black text-white px-8 py-3 text-sm active:bg-gray-700"
+            onClick={() => addToCart(productData.id, size)} // Changed from productData._id to productData.id
+            className="bg-black text-white px-8 py-3 text-sm active:bg-gray-700 disabled:bg-gray-400"
+            disabled={
+              !size && productData.sizes && productData.sizes.length > 0
+            }
           >
             ADD TO CART
           </button>
@@ -115,10 +133,8 @@ const Product = () => {
         </div>
         <div className="flex flex-col gap-4 border px-6 py-6 text-sm text-gray-500">
           <p>
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Excepturi
-            dicta maiores neque voluptatem modi tempora qui voluptatum ea
-            praesentium, voluptatibus vero dignissimos, dolorem cumque magnam
-            reprehenderit, ducimus enim aperiam totam!
+            {productData.description ||
+              "Lorem ipsum dolor sit amet consectetur adipisicing elit. Excepturi dicta maiores neque voluptatem modi tempora qui voluptatum ea praesentium, voluptatibus vero dignissimos, dolorem cumque magnam reprehenderit, ducimus enim aperiam totam!"}
           </p>
           <p>
             Lorem ipsum dolor sit amet consectetur, adipisicing elit. Architecto
@@ -135,7 +151,23 @@ const Product = () => {
       />
     </div>
   ) : (
-    <div className="opacity-0"></div>
+    <div className="flex items-center justify-center h-96">
+      <div className="text-center">
+        <p className="text-gray-500 mb-4">
+          {products && products.length === 0
+            ? "Loading product..."
+            : "Product not found"}
+        </p>
+        {products && products.length > 0 && (
+          <button
+            onClick={() => window.history.back()}
+            className="bg-black text-white px-6 py-2 text-sm"
+          >
+            Go Back
+          </button>
+        )}
+      </div>
+    </div>
   );
 };
 

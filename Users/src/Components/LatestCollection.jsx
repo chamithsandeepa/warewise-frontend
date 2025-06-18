@@ -5,13 +5,21 @@ import ProductItem from "./ProductItem.jsx";
 
 const LatestCollection = () => {
   const { products } = useContext(ShopContext);
-  // console.log(products)
-
   const [latestProducts, setLatestProducts] = useState([]);
 
   useEffect(() => {
-    setLatestProducts(products.slice(0, 10));
-  }, []);
+    if (products && products.length > 0) {
+      // Sort products by date (newest first) and take first 10
+      const sortedProducts = [...products].sort((a, b) => {
+        // If date field exists, sort by it; otherwise use array order
+        if (a.date && b.date) {
+          return b.date - a.date; // Newest first
+        }
+        return 0;
+      });
+      setLatestProducts(sortedProducts.slice(0, 10));
+    }
+  }, [products]); // Added products as dependency
 
   return (
     <div className="my-10">
@@ -28,8 +36,8 @@ const LatestCollection = () => {
         {latestProducts.map((item, index) => (
           <ProductItem
             key={index}
-            id={item._id}
-            image={item.image}
+            id={item.id} // Changed from item._id to item.id
+            image={item.imageUrls} // Changed from item.image to item.imageUrls
             name={item.name}
             price={item.price}
           />

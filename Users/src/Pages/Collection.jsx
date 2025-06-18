@@ -1,4 +1,4 @@
-import React, { use, useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { ShopContext } from "../Context/ShopContext";
 import { assets } from "../assets/frontend_assets/assets";
 import Title from "../Components/Title";
@@ -69,21 +69,13 @@ const Collection = () => {
     }
   };
 
-  // useEffect(() => {
-  //   setFilterProducts(products);
-  // }, []);
-
   useEffect(() => {
     applyFilter();
-  }, [category, subCategory, search, showSearch]);
+  }, [category, subCategory, search, showSearch, products]);
 
   useEffect(() => {
     sortProducts();
   }, [sortType]);
-
-  // useEffect(() => {
-  //   console.log(category);
-  // }, [category]);
 
   return (
     <div className="flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10 border-t">
@@ -184,7 +176,7 @@ const Collection = () => {
             onChange={(e) => setSortType(e.target.value)}
             className="border-2 border-gray-300 text-sm px-2"
           >
-            <option value="relavent">Sort by: Relavent</option>
+            <option value="relavent">Sort by: Relevant</option>
             <option value="low-high">Sort by: Low to High</option>
             <option value="high-low">Sort by: High to Low</option>
           </select>
@@ -195,9 +187,9 @@ const Collection = () => {
             <ProductItem
               key={index}
               name={item.name}
-              id={item._id}
+              id={item.id} // Changed from item._id to item.id to match backend
               price={item.price}
-              image={item.image}
+              image={item.imageUrls} // Changed from item.image to item.imageUrls
             />
           ))}
         </div>

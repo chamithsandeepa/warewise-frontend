@@ -8,9 +8,11 @@ const BestSeller = () => {
   const [bestSeller, setBestSeller] = useState([]);
 
   useEffect(() => {
-    const bestProduct = products.filter((item) => item.bestseller);
-    setBestSeller(bestProduct.slice(0, 5));
-  }, []);
+    if (products && products.length > 0) {
+      const bestProduct = products.filter((item) => item.bestseller === true);
+      setBestSeller(bestProduct.slice(0, 5));
+    }
+  }, [products]); // Added products as dependency
 
   return (
     <div className="my-10">
@@ -27,9 +29,9 @@ const BestSeller = () => {
         {bestSeller.map((item, index) => (
           <ProductItem
             key={index}
-            id={item._id}
+            id={item.id} // Changed from item._id to item.id
             name={item.name}
-            image={item.image}
+            image={item.imageUrls} // Changed from item.image to item.imageUrls
             price={item.price}
           />
         ))}
