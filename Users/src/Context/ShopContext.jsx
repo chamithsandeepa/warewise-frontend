@@ -1,3 +1,4 @@
+// src/Context/ShopContext.jsx
 import { createContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -14,10 +15,42 @@ const ShopContextProvider = (props) => {
   const [showSearch, setShowSearch] = useState(false);
   const [cartItems, setCartItems] = useState({});
   const [products, setProducts] = useState([]);
+  const [user, setUser] = useState(
+    JSON.parse(localStorage.getItem("user")) || null
+  );
+  const [isCartLoaded, setIsCartLoaded] = useState(false);
   const navigate = useNavigate();
 
-  // Add to cart function
-  const addToCart = async (itemId, size) => {
+  // ======================
+  // Load cart from backend
+  // ======================
+  useEffect(() => {
+    const loadCartFromBackend = async () => {
+      if (user && user.id) {
+        try {
+          const res = await axios.get(
+            `http://localhost:8080/api/v1/users/${user.id}`
+          );
+          const updatedUser = res.data;
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          setUser(updatedUser);
+          setCartItems(updatedUser.cartData || {});
+        } catch (error) {
+          console.error("Error loading cart from backend:", error);
+        } finally {
+          setIsCartLoaded(true);
+        }
+      } else {
+        setIsCartLoaded(true);
+      }
+    };
+    loadCartFromBackend();
+  }, [user?.id]);
+
+  // ======================
+  // Add to cart
+  // ======================
+  const addToCart = (itemId, size) => {
     if (!size) {
       toast.error("Please select a size");
       return;
@@ -25,90 +58,116 @@ const ShopContextProvider = (props) => {
 
     let cartData = structuredClone(cartItems);
 
-    if (cartData[itemId]) {
-      if (cartData[itemId][size]) {
-        cartData[itemId][size] += 1;
-      } else {
-        cartData[itemId][size] = 1;
-      }
-    } else {
+    if (!cartData[itemId]) {
       cartData[itemId] = {};
-      cartData[itemId][size] = 1;
     }
+
+    cartData[itemId][size] = (cartData[itemId][size] || 0) + 1;
+
     setCartItems(cartData);
   };
 
-  // Get cart amount
+  // ======================
+  // Update quantity / remove
+  // ======================
+  const updateQuantity = (itemId, size, quantity) => {
+    let cartData = structuredClone(cartItems);
+
+    if (cartData[itemId]) {
+      if (quantity === 0) {
+        delete cartData[itemId][size];
+        if (Object.keys(cartData[itemId]).length === 0) {
+          delete cartData[itemId];
+        }
+      } else {
+        cartData[itemId][size] = quantity;
+      }
+      setCartItems(cartData);
+    }
+  };
+
+  // ======================
+  // Clear cart completely (frontend + backend)
+  // ======================
+  const clearCart = async () => {
+    setCartItems({});
+    if (user?.id) {
+      try {
+        await axios.post(
+          `http://localhost:8080/api/v1/users/updateCart`,
+          {},
+          { params: { userId: user.id } }
+        );
+      } catch (err) {
+        console.error("Failed to clear cart on backend:", err);
+      }
+    }
+  };
+
+  // ======================
+  // Calculate total amount
+  // ======================
   const getCartAmount = () => {
     let totalAmount = 0;
-    for (const items in cartItems) {
-      let itemInfo = products.find((product) => product.id === items); // Changed from _id to id
-      if (itemInfo) {
-        // Add safety check
-        for (const item in cartItems[items]) {
-          try {
-            if (cartItems[items][item] > 0) {
-              totalAmount += itemInfo.price * cartItems[items][item];
-            }
-          } catch (error) {
-            console.error("Error calculating cart amount:", error);
-          }
-        }
+    for (const productId in cartItems) {
+      let product = products.find((p) => p.id === productId);
+      if (!product) continue;
+
+      for (const size in cartItems[productId]) {
+        totalAmount += product.price * cartItems[productId][size];
       }
     }
     return totalAmount;
   };
 
-  // Get cart count
+  // ======================
+  // Calculate cart count
+  // ======================
   const getCartCount = () => {
-    let totalCount = 0;
-    for (const items in cartItems) {
-      for (const item in cartItems[items]) {
-        try {
-          if (cartItems[items][item] > 0) {
-            totalCount += cartItems[items][item];
-          }
-        } catch (error) {
-          console.error("Error calculating cart count:", error);
-        }
+    let count = 0;
+    for (const productId in cartItems) {
+      for (const size in cartItems[productId]) {
+        count += cartItems[productId][size];
       }
     }
-    return totalCount;
+    return count;
   };
 
-  // Update quantity of an item in the cart
-  const updateQuantity = async (itemId, size, quantity) => {
-    let cartData = structuredClone(cartItems);
-    if (cartData[itemId]) {
-      cartData[itemId][size] = quantity;
-      setCartItems(cartData);
-    }
-  };
+  // ======================
+  // Sync cart to backend
+  // ======================
+  useEffect(() => {
+    const syncCart = async () => {
+      if (!user || !user.id || !isCartLoaded) return;
+      try {
+        await axios.post(
+          `http://localhost:8080/api/v1/users/updateCart`,
+          cartItems,
+          { params: { userId: user.id } }
+        );
+      } catch (err) {
+        console.error("Error syncing cart to backend:", err);
+      }
+    };
 
-  // Fetch products from backend
+    syncCart();
+  }, [cartItems, user, isCartLoaded]);
+
+  // ======================
+  // Load products
+  // ======================
   const getProductsData = async () => {
     try {
       const response = await axios.get(backendUrl);
-      console.log("API Response:", response.data); // Debug log
-
-      if (response.data && Array.isArray(response.data)) {
+      if (Array.isArray(response.data)) {
         setProducts(response.data);
-      } else if (
-        response.data &&
-        response.data.data &&
-        Array.isArray(response.data.data)
-      ) {
-        // In case the API returns data wrapped in a data property
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
         setProducts(response.data.data);
       } else {
-        console.error("Unexpected response format:", response.data);
-        toast.error("Unexpected response format from server.");
-        setProducts([]); // Set empty array as fallback
+        setProducts([]);
       }
     } catch (error) {
-      console.error("Error fetching products:", error);
-      toast.error("Failed to fetch products. Please try again later.");
-      setProducts([]); // Set empty array as fallback
+      toast.error("Failed to fetch products");
     }
   };
 
@@ -129,8 +188,11 @@ const ShopContextProvider = (props) => {
     getCartCount,
     updateQuantity,
     getCartAmount,
+    clearCart, // ✅ expose clearCart
     navigate,
     backendUrl,
+    user,
+    setUser,
   };
 
   return (
