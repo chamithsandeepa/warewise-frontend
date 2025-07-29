@@ -1,71 +1,62 @@
-// src/pages/Login.jsx
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { ShopContext } from "../Context/ShopContext";
 
 const Login = () => {
   const [currentState, setCurrentState] = useState("Sign Up");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const { setUser } = useContext(ShopContext);
   const navigate = useNavigate();
-
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
-
-  const handleChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  };
 
   const onSubmitHandler = async (event) => {
     event.preventDefault();
 
-    if (currentState === "Sign Up") {
-      try {
-        const response = await axios.post(
-          "http://localhost:8080/api/v1/users/register",
-          {
-            name: formData.name,
-            email: formData.email,
-            password: formData.password,
-          }
-        );
-        alert("Registration successful!");
-        setCurrentState("Login");
-      } catch (error) {
-        alert("Registration failed. Check the console.");
-        console.error(error);
-      }
-    } else if (currentState === "Login") {
-      try {
+    if (!email || !password || (currentState === "Sign Up" && !name)) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      if (currentState === "Login") {
+        // LOGIN
         const response = await axios.post(
           "http://localhost:8080/api/v1/users/login",
           {
-            email: formData.email,
-            password: formData.password,
+            email,
+            password,
           }
         );
-
-        const user = response.data;
-
-        if (user.role === "user") {
-          localStorage.setItem("user", JSON.stringify(user));
-          alert("Login successful!");
-          navigate("/"); // user homepage
-        } else {
-          alert("You are not authorized to access the user panel.");
-        }
-      } catch (error) {
-        if (error.response?.status === 401) {
-          alert("Invalid email or password.");
-        } else {
-          alert("Login failed. Check the console.");
-        }
-        console.error(error);
+        const userData = response.data;
+        localStorage.setItem("user", JSON.stringify(userData));
+        setUser(userData);
+        toast.success("Login successful");
+        navigate("/");
+      } else {
+        // SIGN UP
+        const response = await axios.post(
+          "http://localhost:8080/api/v1/users/register",
+          {
+            name,
+            email,
+            password,
+          }
+        );
+        const userData = response.data;
+        localStorage.setItem("user", JSON.stringify(userData));
+        setUser(userData);
+        toast.success("Registration successful");
+        navigate("/");
       }
+    } catch (error) {
+      console.error("Auth error:", error);
+      toast.error(
+        error.response?.data || "Something went wrong. Please try again."
+      );
     }
   };
 
@@ -78,50 +69,52 @@ const Login = () => {
         <p className="prata-regular text-3xl">{currentState}</p>
         <hr className="border-none h-[1.5px] w-8 bg-gray-800" />
       </div>
-
-      {currentState === "Sign Up" && (
+      {currentState === "Login" ? (
+        ""
+      ) : (
         <input
           type="text"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
           className="w-full px-3 py-2 border border-gray-800"
           placeholder="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           required
         />
       )}
-
       <input
         type="email"
-        name="email"
-        value={formData.email}
-        onChange={handleChange}
         className="w-full px-3 py-2 border border-gray-800"
         placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
         required
       />
       <input
         type="password"
-        name="password"
-        value={formData.password}
-        onChange={handleChange}
         className="w-full px-3 py-2 border border-gray-800"
         placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
         required
       />
-
       <div className="w-full flex justify-between text-sm mt-[-8px]">
-        <p className="cursor-pointer">Forgot your password?</p>
-        <p
-          onClick={() =>
-            setCurrentState(currentState === "Login" ? "Sign Up" : "Login")
-          }
-          className="cursor-pointer"
-        >
-          {currentState === "Login" ? "Create account" : "Login here"}
-        </p>
+        <p className="cursor-pointer">Forgot Your Password?</p>
+        {currentState === "Login" ? (
+          <p
+            onClick={() => setCurrentState("Sign Up")}
+            className="cursor-pointer"
+          >
+            Create Account
+          </p>
+        ) : (
+          <p
+            onClick={() => setCurrentState("Login")}
+            className="cursor-pointer"
+          >
+            Login Here
+          </p>
+        )}
       </div>
-
       <button className="bg-black text-white font-light px-8 py-2 mt-4">
         {currentState === "Login" ? "Sign In" : "Sign Up"}
       </button>
