@@ -45,11 +45,12 @@ const Add = () => {
       const formData = new FormData();
       formData.append("name", name);
       formData.append("description", description);
-      formData.append("price", parseFloat(price));
+      formData.append("price", parseFloat(price)); // Ensure it's number
       formData.append("category", category);
       formData.append("subCategory", subCategory);
-      formData.append("bestseller", bestseller);
-      formData.append("sizes", JSON.stringify(sizes));
+      formData.append("bestseller", bestseller); // boolean
+      formData.append("sizes", JSON.stringify(sizes)); // stringified array
+      formData.append("date", Date.now()); // ✅ Add this line
 
       formData.append("image1", image1);
       if (image2) formData.append("image2", image2);

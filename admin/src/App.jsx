@@ -8,6 +8,8 @@ import Orders from "./Pages/Orders";
 import Login from "./Components/Login";
 import { ToastContainer } from "react-toastify";
 
+export const currency = "$"
+
 const App = () => {
   // Use state for login status
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);

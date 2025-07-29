@@ -15,7 +15,7 @@ const PlaceOrder = () => {
     delivery_fee,
     user,
     navigate,
-    clearCart, // ✅ import clearCart
+    clearCart,
   } = useContext(ShopContext);
 
   const [deliveryInfo, setDeliveryInfo] = useState({
@@ -35,21 +35,21 @@ const PlaceOrder = () => {
   };
 
   const handlePlaceOrder = async () => {
+    // ✅ Check if user is logged in
     if (!user || !user.id) {
       toast.error("You must be logged in to place an order.");
       return;
     }
 
-    // Build the orderedItems with full product data
+    // ✅ Build orderedItems array with full product details
     const orderedItems = [];
-
     for (const productId in cartItems) {
       const product = products.find((p) => p.id === productId);
       if (!product) continue;
 
       for (const size in cartItems[productId]) {
         orderedItems.push({
-          product: product,
+          product,
           size,
           quantity: cartItems[productId][size],
         });
@@ -62,15 +62,13 @@ const PlaceOrder = () => {
       totalAmount: getCartAmount() + delivery_fee,
       paymentMethod: method,
       deliveryInfo,
-      timestamp: Date.now(), // Optional: store order time
+      timestamp: Date.now(),
     };
 
     try {
       await axios.post("http://localhost:8080/api/v1/orders/place", orderData);
       toast.success("Order placed successfully!");
-
-      await clearCart(); // ✅ clear cart after placing order
-
+      await clearCart();
       navigate("/orders");
     } catch (error) {
       console.error("Order placement failed:", error);
@@ -80,7 +78,7 @@ const PlaceOrder = () => {
 
   return (
     <div className="flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] border-top">
-      {/* Left Side */}
+      {/* Left Side - Delivery Info */}
       <div className="flex flex-col gap-4 w-full sm:max-w-[480px]">
         <div className="text-xl sm:text-xl my-3">
           <Title text1={"DELIVERY"} text2={"INFORMATION"} />
@@ -156,14 +154,15 @@ const PlaceOrder = () => {
         />
       </div>
 
-      {/* Right Side */}
+      {/* Right Side - Payment */}
       <div className="mt-8">
         <div className="mt-8 min-w-80">
           <CartTotal />
         </div>
+
         <div className="mt-12">
           <Title text1={"PAYMENT"} text2={"METHOD"} />
-          <div className="flx gap-3 flex-col lg:flex-row">
+          <div className="flex flex-col lg:flex-row gap-3">
             <div
               onClick={() => setmethod("stripe")}
               className="flex items-center gap-3 border p-2 px-3 cursor-pointer"
@@ -200,6 +199,7 @@ const PlaceOrder = () => {
               </p>
             </div>
           </div>
+
           <div className="w-full text-end mt-8">
             <button
               onClick={handlePlaceOrder}
