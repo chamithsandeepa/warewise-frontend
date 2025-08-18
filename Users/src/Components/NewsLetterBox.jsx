@@ -11,10 +11,10 @@ const NewsLetterBox = () => {
         Subscribe now & get 20% off
       </p>
       <p className="text-gray-400 mt-3">
-        Lorem ipsum, dolor sit amet consectetur adipisicing elit. Deserunt,
-        excepturi beatae delectus eius minima aspernatur iste dolores magni
-        debitis dolorum. Beatae placeat tenetur doloremque cupiditate omnis
-        repellendus modi repudiandae pariatur?
+        Stay updated with our latest collections, exclusive deals, and fashion
+        trends delivered straight to your inbox. Be the first to know about new
+        arrivals, seasonal sales, and special promotions. Join our community of
+        style enthusiasts and never miss out on the best offers.
       </p>
       <form
         onSubmit={onSubmitHandler}
